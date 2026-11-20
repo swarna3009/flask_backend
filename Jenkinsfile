@@ -32,7 +32,7 @@ pipeline {
         stage('Deploy Latest Code') {
             steps {
                 sh '''
-                    rsync -a --delete \
+                    rsync -rltD --no-owner --no-group --no-perms --delete \
                       --exclude='.git/' \
                       --exclude='__pycache__/' \
                       --exclude='*.pyc' \
@@ -72,6 +72,7 @@ pipeline {
         success {
             echo 'Flask backend deployed successfully!'
         }
+
         failure {
             echo 'Flask deployment failed. Check the console output.'
         }
