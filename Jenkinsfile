@@ -2,26 +2,78 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        timeout(time: 15, unit: 'MINUTES')
+    }
+
+    environment {
+        APP_DIR = '/home/ubuntu/projects/flask_backend'
+        VENV = '/home/ubuntu/projects/venv'
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                echo 'Flask source code checked out by Jenkins'
+                checkout scm
+            }
+        }
+
+        stage('Validate Project') {
+            steps {
+                sh '''
+                    test -f app.py
+                    test -f requirements.txt
+                    echo "Flask project files found"
+                '''
+            }
+        }
+
+        stage('Deploy Latest Code') {
+            steps {
+                sh '''
+                    rsync -a --delete \
+                      --exclude='.git/' \
+                      --exclude='__pycache__/' \
+                      --exclude='*.pyc' \
+                      "$WORKSPACE/" "$APP_DIR/"
+                '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    python3 -m venv venv
-                    venv/bin/pip install -r requirements.txt
+                    "$VENV/bin/pip" install -r "$APP_DIR/requirements.txt"
                 '''
             }
         }
 
-        stage('Deploy Flask') {
+        stage('Restart Flask') {
             steps {
-                echo 'Flask deployment stage'
+                sh '''
+                    sudo -n -u ubuntu /usr/local/bin/pm2 restart flask-backend
+                '''
             }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                    curl --fail --silent --show-error \
+                      --retry 5 --retry-delay 2 \
+                      http://127.0.0.1:5000/api
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Flask backend deployed successfully!'
+        }
+        failure {
+            echo 'Flask deployment failed. Check the console output.'
         }
     }
 }
