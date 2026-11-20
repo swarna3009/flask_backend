@@ -3,7 +3,7 @@ from swarna import get_names
 app = Flask(__name__)
 @app.route('/')
 def hello():
-    return "hello world"
+    return "hello from jenkins"
 @app.route('/api',methods=["GET"])
 def api():
     data = get_names()
