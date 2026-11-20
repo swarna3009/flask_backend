@@ -32,7 +32,7 @@ pipeline {
         stage('Deploy Latest Code') {
             steps {
                 sh '''
-                    rsync -rltD --no-owner --no-group --no-perms --delete \
+                    rsync -rD --no-owner --no-group --no-perms --omit-dir-times --delete \
                       --exclude='.git/' \
                       --exclude='__pycache__/' \
                       --exclude='*.pyc' \
